@@ -1,0 +1,14 @@
+{
+  "name": "윤서",
+  "role": "main",
+  "lock_prompt": "윤서 (main, Korean woman office worker, 29, marketing assistant manager): chin-length softly wavy bob with see-through bangs, small hoop earrings, big round eyes, slim build, oversized cream cable-knit cardigan with NO logo over a thin horizontal-striped t-shirt, high-waist wide slacks, white sneakers, a plain canvas tote bag.",
+  "check_attributes": [
+    "턱선 길이 웨이브 단발 + 시스루뱅",
+    "작은 링 귀걸이",
+    "로고 없는 오버핏 케이블 니트 가디건",
+    "가로 줄무늬 티",
+    "무지 캔버스 토트백"
+  ],
+  "sheets": [],
+  "approved_sheet": null
+}

@@ -1,0 +1,145 @@
+{
+  "pages": [
+    {
+      "n": 1,
+      "kind": "cover",
+      "cast": [
+        "yunseo"
+      ],
+      "scene": "Upper-body shot of 윤서 hugging her smartphone to her chest with sparkling eyes and a dreamy blush, tiny hearts floating around her. The phone screen faces away from the viewer. Character occupies only the lower 60%; the top 40% must be completely empty plain white for the title.",
+      "lines": [],
+      "in_image_text": [],
+      "cover_title": [
+        "월급날",
+        "장바구니에 제일 먼저",
+        "담는 것 TOP 3"
+      ]
+    },
+    {
+      "n": 2,
+      "kind": "body",
+      "cast": [
+        "yunseo"
+      ],
+      "scene": "Morning at the office desk: 윤서 checks her phone (screen facing away), eyes wide, sparkles around her, fist pumping. Keep the top-left 40% empty plain white for a balloon.",
+      "lines": [
+        {
+          "id": "p2a",
+          "kind": "speech",
+          "speaker": "윤서",
+          "text": "월급 들어왔다. 장바구니 열어 볼까?"
+        }
+      ],
+      "in_image_text": []
+    },
+    {
+      "n": 3,
+      "kind": "body",
+      "cast": [
+        "yunseo"
+      ],
+      "scene": "윤서 at her studio apartment vanity, holding up a plain unlabeled supplement bottle with a determined nod, other blank bottles lined up. Keep the top 25% empty plain white and an empty area on the right middle.",
+      "lines": [
+        {
+          "id": "p3a",
+          "kind": "speech",
+          "speaker": "윤서",
+          "text": "3위, 다 떨어진 영양제부터 담고."
+        },
+        {
+          "id": "p3b",
+          "kind": "sfx",
+          "speaker": "",
+          "text": "톡"
+        }
+      ],
+      "in_image_text": []
+    },
+    {
+      "n": 4,
+      "kind": "body",
+      "cast": [
+        "yunseo"
+      ],
+      "scene": "Close-up of 윤서 trying a lipstick swatch on the back of her hand (plain unbranded lipstick tube), delighted face, flower sparkle background. Keep the top-left corner empty plain white.",
+      "lines": [
+        {
+          "id": "p4a",
+          "kind": "narration",
+          "speaker": "",
+          "text": "2위. 세일 중인 신상 립"
+        }
+      ],
+      "in_image_text": []
+    },
+    {
+      "n": 5,
+      "kind": "body",
+      "cast": [
+        "yunseo"
+      ],
+      "scene": "윤서 lying on her bed scrolling her phone (screen facing away), chin on pillow, smug knowing smile. Keep the top 30% and the bottom 20% empty plain white.",
+      "lines": [
+        {
+          "id": "p5a",
+          "kind": "speech",
+          "speaker": "윤서",
+          "text": "…1위는 고민할 필요도 없지."
+        },
+        {
+          "id": "p5b",
+          "kind": "narration",
+          "speaker": "",
+          "text": "1위. 3달째 담아 둔 가디건"
+        }
+      ],
+      "in_image_text": []
+    },
+    {
+      "n": 6,
+      "kind": "body",
+      "cast": [
+        "yunseo"
+      ],
+      "scene": "Dramatic close-up: 윤서's index finger trembling over a big pay button on a phone screen, the button shows only the word listed as allowed text, sweat drop, speed lines. Keep the bottom 20% empty plain white.",
+      "lines": [
+        {
+          "id": "p6a",
+          "kind": "narration",
+          "speaker": "",
+          "text": "결제 버튼 앞에서 10분째"
+        }
+      ],
+      "in_image_text": [
+        "결제하기"
+      ]
+    },
+    {
+      "n": 7,
+      "kind": "body",
+      "cast": [
+        "yunseo"
+      ],
+      "scene": "Next morning: 윤서 slumped at her desk staring at her phone (screen facing away), soul leaving her body as a little ghost, coffee cup beside her. Keep the top-left corner empty plain white.",
+      "lines": [
+        {
+          "id": "p7a",
+          "kind": "narration",
+          "speaker": "",
+          "text": "그리고 다음 날"
+        }
+      ],
+      "in_image_text": []
+    },
+    {
+      "n": 8,
+      "kind": "ending",
+      "cast": [
+        "yunseo"
+      ],
+      "scene": "윤서 at home in the evening wearing the new cream cardigan, twirling happily in front of a mirror, sparkles. Character in the upper 60%; keep the bottom 35% completely empty plain white.",
+      "lines": [],
+      "in_image_text": []
+    }
+  ]
+}

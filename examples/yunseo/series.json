@@ -1,0 +1,47 @@
+{
+  "title": "윤서 대리의 퇴근 후 3시간",
+  "handle": "",
+  "style": {
+    "preset": null,
+    "bible": "Black-and-white Korean webtoon / manga ink style for an Instagram comic: clean soft pen lines, light screentone accents, high contrast, mostly white backgrounds, cute expressive faces, cozy studio apartment and office settings, black panel borders on a white page.",
+    "palette": "bw",
+    "references": [],
+    "samples": [],
+    "approved_sample": null
+  },
+  "style_bible": "Black-and-white Korean webtoon / manga ink style for an Instagram comic: clean soft pen lines, light screentone accents, high contrast, mostly white backgrounds, cute expressive faces, cozy studio apartment and office settings, black panel borders on a white page.",
+  "negative": "brand logos, trademarks, product brand names, watermarks, real celebrity faces, readable text on screens unless listed",
+  "cover": {
+    "title_lines": [
+      "첫째 줄",
+      "강조할 가운데 줄",
+      "셋째 줄"
+    ],
+    "accent_line": 2,
+    "accent_color": "#E0457B",
+    "text_color": "#111111",
+    "stroke_color": "#111111",
+    "title_area": [
+      0.05,
+      0.03,
+      0.95,
+      0.38
+    ],
+    "label_template": "윤서 대리의 퇴근 후 3시간 EP.{n}"
+  },
+  "ending": {
+    "series_line": "윤서 대리의 퇴근 후 3시간",
+    "tagline": "퇴근 후 3시간, 나를 챙기는 이야기",
+    "follow_text": "공감되면 팔로우",
+    "area": [
+      0.08,
+      0.735,
+      0.92,
+      0.975
+    ]
+  },
+  "canvas": [
+    1080,
+    1350
+  ]
+}
