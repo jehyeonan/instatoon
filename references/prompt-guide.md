@@ -50,3 +50,11 @@ toon prompt 가 만드는 프롬프트는 형식 지시(맨 앞과 맨 끝) + �
 ## 그림체 샘플은 시트에만 넣는다
 
 승인된 그림체 샘플(style.approved_sample)은 캐릭터 시트 생성의 referenced_image_paths 맨 앞에만 들어간다. 장 프롬프트(toon prompt)의 jobs 에는 넣지 않는다. 이유: 캐릭터 시트가 이미 승인된 그림체를 담고 있어 장 생성에서는 시트 하나로 그림체와 캐릭터가 모두 고정된다. 샘플은 중립 장면(책상 앞 사무직)이라 장 생성에 함께 넣으면 샘플의 구도와 인물을 베끼려는 경향이 생긴다.
+
+
+## 화면을 보는 장면
+
+휴대폰·노트북 화면 내용과 인물 표정을 한 컷에 동시에 정면으로 담으면 화면이 인물 반대쪽을 향하는 어색한 그림이 나온다(예제 EP.1 6장 v1에서 실제로 발생). 둘 중 하나를 고른다.
+
+- 화면 내용이 중요: "Over-the-shoulder close-up from just behind the character's shoulder: back of head, three-quarter profile, looking down at the phone she holds; the screen faces her and therefore the viewer."
+- 표정이 중요: "The phone screen faces away from the viewer."
