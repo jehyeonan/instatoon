@@ -20,6 +20,7 @@ class StyleBase(unittest.TestCase):
         self.root = os.path.join(self.dir, "s")
         code, o, e = helpers.toon("init", self.root, "--title", "테스트툰")
         assert code == 0, e
+        helpers.approve_plan(self.root)
         self.good = helpers.make_image(os.path.join(self.dir, "good.png"))
         self.wide = helpers.make_image(os.path.join(self.dir, "wide.png"), size=(1400, 1000))
 

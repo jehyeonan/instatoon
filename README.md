@@ -2,7 +2,7 @@
 
 ![예제 EP.1](examples/yunseo/ep01_preview.jpg)
 
-연재 인스타툰을 Codex 안에서 만드는 스킬 패키지. 그림체 구성 → 캐릭터 시트 승인 → 주제 선택 → 콘티 → Codex 내장 이미지 생성(글자 없는 그림) → 말풍선·표지·엔딩 식자 → QA → 1080x1350 내보내기. 웹앱, API 키, 비용 계산은 없다.
+연재 인스타툰을 Codex 안에서 만드는 스킬 패키지. 시리즈 기획 승인 → 그림체 구성 → 캐릭터 시트 승인 → 주제 선택 → 콘티 → Codex 내장 이미지 생성(글자 없는 그림) → 말풍선·표지·엔딩 식자 → QA → 1080x1350 내보내기. 웹앱, API 키, 비용 계산은 없다.
 
 ## 설치
 
@@ -21,10 +21,13 @@ Python 3.9 이상, bash 필요. `scripts/toon` 은 uv 가 있으면 `uv run --no
 
 ## 사용 흐름
 
-Codex 에서 "인스타툰 만들자"처럼 말하면 SKILL.md 의 절차를 따른다. 정지점: G0 그림체 승인, G1 캐릭터 시트 승인, G2 주제 선택, G3 콘티 승인, G4 장별 승인, G5 내보내기 확인. 직접 쓸 때:
+Codex 에서 "인스타툰 만들자"처럼 말하면 SKILL.md 의 절차를 따른다. 정지점: P 기획 승인, G0 그림체 승인, G1 캐릭터 시트 승인, G2 주제 선택, G3 콘티 승인, G4 장별 승인, G5 내보내기 확인. 직접 쓸 때:
 
     toon init mytoon --title "내 시리즈"
     cd mytoon
+    toon plan set --purpose growth --premise "한 줄 소개" --who "20대 직장인" --kpi shares --format-mix anecdote,comparison
+    toon plan pillar add "기둥 이름" --share 40       # 3~5개, share 합 100
+    toon plan check && toon plan recommend && toon plan approve
     toon style presets                                   # 레퍼런스가 있으면: toon style ref add 그림.png
     toon style prompt --presets bw_manga,doodle,chibi    # 같은 장면 샘플 프롬프트 3개
     toon style ingest sample1.png --preset bw_manga      # image_gen 결과 등록
@@ -48,26 +51,29 @@ Codex 에서 "인스타툰 만들자"처럼 말하면 SKILL.md 의 절차를 따
 | 명령 | 설명 |
 | --- | --- |
 | init <dir> --title T [--handle H] | 시리즈 폴더와 series.json 템플릿 |
+| plan show / check / recommend / approve | 기획 요약, 검증(오류 있으면 종료코드 1), 목적·KPI 기반 추천 포맷, 승인(검사 오류 0이어야 함) |
+| plan set [--purpose P] [--premise T] [--tone T] [--cadence T] [--kpi a,b] [--monetization a,b] [--format-mix a,b] [--who/--pain/--want T] [--boundary T]... [--reference T]... [--file plan.json] | 기획 값 설정(파일은 병합). 승인 뒤 내용이 바뀌면 승인 해제 |
+| plan pillar add <이름> [--desc T] [--share N] / plan pillar rm <id> | 콘텐츠 기둥 추가·삭제 |
 | style presets | 그림체 프리셋 목록 |
 | style set (--preset ID \| --bible "...") [--palette bw\|mono_accent\|color] | 그림체 지정(바뀌면 승인 해제) |
 | style ref add <이미지...> / style ref list | 레퍼런스 이미지 등록, style/refs/ |
-| style prompt [--presets a,b,c] [--scene "..."] | 비교용 샘플 프롬프트와 jobs JSON |
-| style ingest <png> [--preset ID] | 샘플 등록(4:5 밖은 rejected) |
+| style prompt [--presets a,b,c] [--scene "..."] [--no-plan] | 비교용 샘플 프롬프트와 jobs JSON(승인된 기획 필요) |
+| style ingest <png> [--preset ID] [--no-plan] | 샘플 등록(4:5 밖은 rejected, 승인된 기획 필요) |
 | style approve [--version N] | 샘플 승인(프리셋이면 bible 동기화) |
 | character add <id> --name N --role main\|support [--no-style] | 캐릭터 폴더, character.json, 시트 프롬프트(승인된 그림체 샘플이 있어야 함) |
 | character prompt <id> [--no-style] | lock_prompt 반영해 시트 프롬프트 새 버전 |
 | character ingest <id> <png> | 시트 버전 등록 |
 | character approve <id> [--version V] | 승인 시트 지정 |
 | formats [ID] | 포맷 16종 목록 / 한 포맷의 장별 역할 |
-| episode new [--n N] [--format F] | 에피소드 폴더, episode.json, 포맷의 장별 역할을 담은 storyboard.json 틀(없는 포맷은 거부) |
+| episode new [--n N] [--format F] [--pillar ID] | 에피소드 폴더, episode.json, 포맷의 장별 역할을 담은 storyboard.json 틀(없는 포맷은 거부). --format 생략 시 승인된 기획의 format_mix 첫째, 없으면 ranking. 포맷이 format_mix 밖이면 경고 |
 | prompt <ep> [--pages 2,5] [--no-sheets] | 콘티 검증 후 장별 prompt_vN.txt, jobs.json 출력 |
 | ingest <ep> <page> <png> [--edit-of N] | 새 버전 등록(가로 등 비율 불량은 rejected 기록) |
 | grid <ep> <page> | 10% 격자 + 좌표 라벨 grid.png |
 | letter <ep> [--pages] | letter.json 으로 lettered.png (표지·엔딩 자동 문구) |
-| qa <ep> | 자동 검사 + 시각 점검 목록, qa.json |
+| qa <ep> | 자동 검사 + 시각 점검 목록, qa.json (기둥 미지정, 기획의 금지어 경고 포함) |
 | approve <ep> <page> [--version V] [--force] | 장 승인. 식자가 최신이어야 하고, 마지막 qa 에 그 장 오류가 있으면 거부(--force 로 qa 오류만 무시) |
 | export <ep> [--force] | out/01.jpg.., preview.jpg, caption.txt (--force 는 미승인만 허용, 식자 최신성은 항상 검사) |
-| status [ep] | 그림체 상태, 장별 상태, 생성 수, 재생성률 |
+| status [ep] | 기획 상태(첫 줄), 기둥 분포 대 목표, 그림체 상태, 장별 상태, 생성 수, 재생성률 |
 
 모든 명령에 `--root <시리즈 폴더>` 를 줄 수 있다. 주면 그 폴더만 보고(위로 탐색하지 않음) series.json 이 없으면 오류다. 없으면 현재 위치에서 위로 series.json 을 찾는다.
 
@@ -77,7 +83,7 @@ export 는 모든 장을 검증하고 out.tmp 에 다 만든 뒤에만 out/ 으�
 
 ## 폴더
 
-    series.json  style/{refs/, sample_vN.png, sample_prompt_vN*.txt}  characters/<id>/character.json  episodes/epNN/{episode.json, storyboard.json, jobs.json, qa.json, out/}
+    series.json (plan 포함)  style/{refs/, sample_vN.png, sample_prompt_vN*.txt}  characters/<id>/character.json  episodes/epNN/{episode.json, storyboard.json, jobs.json, qa.json, out/}
     episodes/epNN/pages/pNN/{prompt_vN.txt, gen_vN.png, page.json, letter.json, lettered.png, grid.png}
     episodes/epNN/pages/pNN/lettered.json   식자 기준(채택 버전)
     ledger.jsonl   생성 요청 기록(감사용, 재현 보장 아님)

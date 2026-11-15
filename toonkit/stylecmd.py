@@ -9,6 +9,7 @@ from PIL import Image
 
 from . import prompts
 from .styles import DEFAULT_ACCENT, PALETTES, PRESETS, get_preset
+from .styles import TEMPLATE_BIBLE
 from .util import RATIO_MAX, RATIO_MIN, ToonError, now, verify_image
 
 DEFAULT_SCENE = ("a generic young office worker at a desk with a laptop and a coffee mug, upper body, "
@@ -232,7 +233,7 @@ def status_line(proj):
         kind = "프리셋 %s" % st["preset"]
     elif (st.get("bible") or "").strip():
         kind = "직접 작성"
-    elif proj.style_bible() and proj.style_bible() != "":
+    elif proj.style_bible() and proj.style_bible() != TEMPLATE_BIBLE:
         kind = "구버전 style_bible"
     else:
         kind = "미설정"

@@ -1,21 +1,28 @@
 {
   "number": 1,
   "format": "ranking",
+  "pillar": "p1",
   "topic_candidates": [
     {
       "title": "월급날 장바구니에 제일 먼저 담는 것 TOP 3",
       "why": "20~30대 여성 직장인 공감, 뷰티·패션·영양제가 자연스럽게 등장(협찬 연결 쉬움), 친구 태그 유도",
-      "score": 9
+      "score": 9,
+      "pillar": "p1",
+      "format": "ranking"
     },
     {
       "title": "퇴근하고 씻기까지 걸리는 시간 단계별",
       "why": "공감 강함, 구매 연결은 약함",
-      "score": 7
+      "score": 7,
+      "pillar": "p2",
+      "format": "explainer"
     },
     {
       "title": "택배 언박싱 직전 3초의 심리",
       "why": "짧고 귀여움, 시리즈 2화 후보",
-      "score": 6
+      "score": 6,
+      "pillar": "p1",
+      "format": "ranking"
     }
   ],
   "chosen": "월급날 장바구니에 제일 먼저 담는 것 TOP 3",

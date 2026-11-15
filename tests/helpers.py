@@ -43,3 +43,16 @@ def temp_series():
     shutil.copytree(EXAMPLE, root)
     return d, root
 
+
+
+def approve_plan(root):
+    """예제의 승인된 plan 을 root 의 series.json 에 넣는다(init 으로 만든 시리즈용)."""
+    import json
+    with open(os.path.join(EXAMPLE, "series.json"), encoding="utf-8") as f:
+        plan = json.load(f)["plan"]
+    p = os.path.join(root, "series.json")
+    with open(p, encoding="utf-8") as f:
+        s = json.load(f)
+    s["plan"] = plan
+    with open(p, "w", encoding="utf-8") as f:
+        json.dump(s, f, ensure_ascii=False, indent=2)

@@ -3,7 +3,7 @@ import os
 
 from PIL import Image
 
-from . import balloons, lettering, schema, sponsor
+from . import balloons, lettering, planning, schema, sponsor
 from .util import RATIO_MAX, RATIO_MIN, crop_box, norm_text, read_json, write_json
 
 VISUAL_ITEMS = [
@@ -98,18 +98,42 @@ def check_page(proj, ep, page):
     return {"page": n, "errors": errors, "warnings": warns, "approved": bool(pj.get("approved")), "visual_checks": visual}
 
 
+def episode_warnings(proj, epj, sb):
+    """기획(plan) 연결 경고: 기둥 미지정, 다루지 않을 것(boundaries) 단어."""
+    plan = planning.get(proj.series)
+    if not plan:
+        return []
+    warns = []
+    ids = [x.get("id") for x in plan.get("pillars") or []]
+    if ids and not epj.get("pillar"):
+        warns.append("어느 콘텐츠 기둥인지 적으세요(episode.json 의 pillar: %s)." % ", ".join(ids))
+    elif ids and epj.get("pillar") not in ids:
+        warns.append("pillar '%s' 가 기획의 기둥(%s)에 없습니다." % (epj.get("pillar"), ", ".join(ids)))
+    texts = []
+    for p in sb.get("pages") or []:
+        texts.append(str(p.get("scene", "")))
+        texts += [str(ln.get("text", "")) for ln in p.get("lines") or [] if isinstance(ln, dict)]
+    for term, _ in planning.boundary_hits(plan, texts):
+        warns.append("기획의 '다루지 않을 것' 단어 '%s' 가 콘티(장면·대사)에 나옵니다." % term)
+    return warns
+
+
 def run(proj, ep):
     sb, _ = proj.valid_storyboard(ep)
     res = [check_page(proj, ep, p) for p in sorted(sb["pages"], key=lambda p: p["n"])]
-    ep_errors = sponsor.check(proj.load_episode(ep))
-    out = {"episode": ep, "pages": res, "episode_errors": ep_errors,
-           "errors": sum(len(r["errors"]) for r in res) + len(ep_errors), "warnings": sum(len(r["warnings"]) for r in res)}
+    epj = proj.load_episode(ep)
+    ep_errors = sponsor.check(epj)
+    ep_warns = episode_warnings(proj, epj, sb)
+    out = {"episode": ep, "pages": res, "episode_errors": ep_errors, "episode_warnings": ep_warns,
+           "errors": sum(len(r["errors"]) for r in res) + len(ep_errors),
+           "warnings": sum(len(r["warnings"]) for r in res) + len(ep_warns)}
     write_json(os.path.join(proj.ep_dir(ep), "qa.json"), out)
     return out
 
 
 def summary(out):
     lines = ["[에피소드] 오류: " + e for e in out.get("episode_errors") or []]
+    lines += ["[에피소드] 경고: " + w for w in out.get("episode_warnings") or []]
     for r in out["pages"]:
         mark = "FAIL" if r["errors"] else ("warn" if r["warnings"] else "ok")
         lines.append("[%s] %d장%s" % (mark, r["page"], " (승인)" if r["approved"] else ""))

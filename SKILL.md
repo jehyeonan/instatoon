@@ -1,6 +1,6 @@
 ---
 name: instatoon
-description: 연재 인스타툰(4:5 세로 컷툰)을 Codex 안에서 만든다. 캐릭터 시트 승인, 주제 선택, 콘티, Codex 내장 이미지 생성(글자 없는 그림), 말풍선·표지·엔딩 식자(Pillow), QA, 1080x1350 내보내기까지. Use when the user wants to make or continue a serial Instagram webtoon (instatoon, 인스타툰, 컷툰, 공감툰, 연재 만화), create a character sheet, write a storyboard, letter speech bubbles, or export carousel pages. Triggers - 인스타툰 만들어줘, 다음 화 만들자, 캐릭터 시트, 콘티, 말풍선 식자, instatoon, make an instagram comic episode.
+description: 연재 인스타툰(4:5 세로 컷툰)을 Codex 안에서 만든다. 시리즈 기획 승인, 그림체, 캐릭터 시트 승인, 주제 선택, 콘티, Codex 내장 이미지 생성(글자 없는 그림), 말풍선·표지·엔딩 식자(Pillow), QA, 1080x1350 내보내기까지. Use when the user wants to make or continue a serial Instagram webtoon (instatoon, 인스타툰, 컷툰, 공감툰, 연재 만화), create a character sheet, write a storyboard, letter speech bubbles, or export carousel pages. Triggers - 인스타툰 만들어줘, 다음 화 만들자, 캐릭터 시트, 콘티, 말풍선 식자, instatoon, make an instagram comic episode.
 ---
 
 # instatoon
@@ -14,12 +14,13 @@ description: 연재 인스타툰(4:5 세로 컷툰)을 Codex 안에서 만든다
 - API 키, 비용 계산, 외부 provider 없음. 이미지는 사용자의 Codex 이미지 생성만 쓴다.
 - 인스타그램 게시, 메시지 전송, 업로드는 하지 않는다. 마지막은 내보낸 파일 경로를 알려 주는 것이다.
 - 캡션에 AI 생성 표시 문구를 넣지 않는다(사용자 결정).
-- 참고 자료: [style-guide](references/style-guide.md), [formats](references/formats.md), [prompt-guide](references/prompt-guide.md), [lettering-guide](references/lettering-guide.md), [qa-checklist](references/qa-checklist.md). 작업 단계에 맞춰 필요할 때 읽는다.
+- 참고 자료: [planning-guide](references/planning-guide.md), [style-guide](references/style-guide.md), [formats](references/formats.md), [prompt-guide](references/prompt-guide.md), [lettering-guide](references/lettering-guide.md), [qa-checklist](references/qa-checklist.md). 작업 단계에 맞춰 필요할 때 읽는다.
 
 ## 정지점
 
 각 정지점에서 결과를 보여 주고 사용자의 답을 받은 뒤 다음으로 간다. 승인 없이 다음 단계로 넘어가지 않는다.
 
+- **P 기획 승인**: 목적·독자·한 줄 소개·콘텐츠 기둥·말투·주기·KPI·수익·금지 사항을 보여 주고 승인받는다(`toon plan approve`). 첫 정지점이다.
 - **G0 그림체 승인**: 같은 장면의 그림체 샘플을 보여 주고 고르게 한 뒤 승인받는다.
 - **G1 캐릭터 시트 승인**: 시트 이미지를 보여 주고 승인받는다.
 - **G2 주제 선택**: 후보 3~5개를 이유와 함께 보여 주고 고르게 한다.
@@ -29,13 +30,28 @@ description: 연재 인스타툰(4:5 세로 컷툰)을 Codex 안에서 만든다
 
 ## 절차
 
+### P. 시리즈 기획 (승인)
+콘티 포맷과 그림체를 고르기 전에 시리즈 기획부터 정한다. 승인된 기획이 없으면 `toon style prompt/ingest` 가 거부된다(`--no-plan` 으로만 우회, plan 이 없는 옛 시리즈는 경고만). 기준은 [planning-guide](references/planning-guide.md).
+
+1. 사용자에게 묻는다. 한 번에 3~4개씩 나눠서:
+   - 왜 하나요? (목적: growth 키우기 / brand 브랜딩 / monetize 수익 / portfolio 포트폴리오 / record 기록)
+   - 누구에게 보여 줄까요? 그 사람들이 자주 겪는 일·고민은요?
+   - 무슨 이야기를 하나요? (한 줄 소개, 반복할 소재 3~5개)
+   - 어떤 말투인가요? 얼마나 자주 올리나요?
+   - 성과는 무엇으로 볼까요? (저장·공유·팔로우·댓글·클릭 중 1~2개) 수익 계획은요?
+   - 다루지 않을 것(실명, 회사명, 정치 등)과 참고할 계정은요?
+2. 답이 모호하면 에이전트가 초안 2안을 제안해 고르게 한다.
+3. `toon plan set ...`, `toon plan pillar add <이름> --share N` 으로 채우고 `toon plan check` 를 오류 0으로 만든다.
+4. `toon plan recommend` 로 목적·KPI 기반 추천 포맷을 보여 주고 format_mix 를 정한다(`toon plan set --format-mix a,b,c`).
+5. 사용자 확인(**P**) 뒤 `toon plan approve`. 승인 뒤 내용을 바꾸면 승인이 풀리므로 다시 승인받는다.
+
 ### 0. 그림체 구성 (G0)
 시리즈 폴더가 없으면 `toon init <폴더> --title "시리즈 제목"` 으로 만들고, 있으면 `toon status` 로 그림체 상태부터 본다. 그림체를 정하지 않으면 캐릭터 시트를 만들 수 없다(`toon character add/prompt` 거부, `--no-style` 로만 우회). series.json 의 negative, cover, ending 은 사용자와 함께 채운다(prompt-guide 참고). 자세한 기준은 style-guide.
 
-1. 사용자에게 묻는다: 참고하고 싶은 그림(이미지·계정)이 있는지, 독자와 소재, 흑백/포인트색/컬러.
+1. 사용자에게 묻는다: 참고하고 싶은 그림(이미지·계정)이 있는지, 흑백/포인트색/컬러. 독자와 소재는 기획(plan.audience, premise, tone)을 근거로 삼는다.
 2. 레퍼런스 유무에 따라:
    - **a. 레퍼런스 이미지가 있으면** `toon style ref add <이미지...>` → view_image 로 보고 선·명암·색·등신·배경 밀도를 영문 bible 한 문단으로 적어 `toon style set --bible "..." [--palette ...]` → `toon style prompt` 로 샘플 프롬프트 1~2개(레퍼런스가 referenced_image_paths 로 붙는다) → image_gen → `toon style ingest <png>`.
-   - **b. 레퍼런스가 없으면** 먼저 references/style-presets.jpg(7종 비교표)를 view_image 로 보여 주고, `toon style presets` 에서 소재·독자에 맞는 3개를 골라 이유와 함께 제안한다 → `toon style prompt --presets a,b,c` (같은 장면, 프리셋마다 프롬프트 파일 1개) → image_gen 으로 3장 생성(4장 이하 병렬) → 장마다 `toon style ingest <png> --preset <id>` → view_image 로 3장을 나란히 보여 준다.
+   - **b. 레퍼런스가 없으면** 먼저 references/style-presets.jpg(7종 비교표)를 view_image 로 보여 주고, `toon style presets` 에서 기획의 독자·말투에 맞는 3개를 골라 이유와 함께 제안한다 → `toon style prompt --presets a,b,c` (같은 장면, 프리셋마다 프롬프트 파일 1개) → image_gen 으로 3장 생성(4장 이하 병렬) → 장마다 `toon style ingest <png> --preset <id>` → view_image 로 3장을 나란히 보여 준다.
 3. 사용자가 고르면 `toon style approve [--version N]` (고른 샘플의 프리셋으로 bible 이 맞춰진다). 수정 요청(더 굵은 선, 색 줄이기 등)은 bible 을 고쳐(style-guide 의 변환 예) `toon style set --bible` 후 `toon style prompt` 로 다시 샘플을 만든다. `style set` 으로 그림체가 바뀌면 승인이 해제되므로 다시 승인받는다. 비율이 4:5 밖인 샘플은 ingest 가 rejected 로 기록하고 승인할 수 없다.
 4. 저작권: 특정 작가의 그림체를 그대로 복제하거나 작가 이름을 프롬프트에 넣지 않는다. 레퍼런스에서는 선·색·비율 같은 일반 속성만 말로 옮기고 캐릭터·로고·문구는 가져오지 않는다.
 
@@ -46,7 +62,7 @@ description: 연재 인스타툰(4:5 세로 컷툰)을 Codex 안에서 만든다
 4. 결과 PNG 를 `toon character ingest <id> <png>` 로 등록하고 view_image 로 확인한다. check_attributes 가 시트에 다 있는지 본다. **G1** 승인 후 `toon character approve <id>` .
 
 ### 2. 에피소드와 주제 (G2)
-먼저 `toon formats` 로 포맷 16종을 보고(`toon formats <id>` 는 장별 역할), 주제 후보마다 어울리는 포맷을 붙여 제안한다(예: "월급날 장바구니 TOP 3 — ranking", "회식 vs 퇴근 — comparison"). 협찬이면 sponsored 나 groupbuy. 선택이 끝나면 `toon episode new --format <id>` 로 틀을 만든다. episode.json 의 topic_candidates 에 후보와 이유·점수를 적어 사용자에게 보이고 **G2** 선택을 받아 chosen, reason 을 채운다.
+먼저 `toon plan show` 로 기획을 보고 `toon formats` 로 포맷 16종을 본다(`toon formats <id>` 는 장별 역할). 주제 후보마다 pillar(콘텐츠 기둥 id)와 format 을 붙여 제안한다. `toon status` 의 기둥 분포가 목표 share 에서 치우치면 덜 쓴 기둥을 우선한다. 포맷은 기획의 format_mix 안에서 고르는 것이 기본이다(예: "월급날 장바구니 TOP 3 — ranking", "회식 vs 퇴근 — comparison"). 협찬이면 sponsored 나 groupbuy. 선택이 끝나면 `toon episode new --format <id> --pillar <기둥 id>` 로 틀을 만든다(--format 을 생략하면 승인된 기획의 format_mix 첫째). episode.json 의 topic_candidates 에 후보와 pillar, format, 이유·점수를 적어 사용자에게 보이고 **G2** 선택을 받아 chosen, reason 을 채운다.
 
 ### 3. 콘티 (G3)
 `toon episode new --format <id>` 가 만든 storyboard.json 틀(장별 역할이 scene 자리표시)을 채운다. 포맷을 바꾸려면 `toon formats <id>` 의 장별 역할과 references/formats.md 를 보고 다시 짠다. 장 수가 포맷 권장 범위를 벗어나면 경고, 20장을 넘으면 오류다. 표지에는 cover_subtitle(화 번호·부제 칩, 선택), cover_note(작은 고지, 선택)를 쓸 수 있다. 연재물(serial, episodic)의 마지막 장은 자동으로 "- 계속 -"이고(episode.json 의 continue_text 로 변경), 완결 화는 episode.json 에 "final": true 를 둔다. 협찬은 episode.json 에 "sponsored": {"label": "광고", "cover_chip": true, "all_pages": false} 를 둔다(label 은 광고, 유료광고, 상품 협찬, 광고비 지급 중 대가에 맞게). 형식은 formats.md. 장마다 scene, cast, lines(id, kind, speaker, text), in_image_text(그림 안에 허용할 짧은 글자만), 표지는 cover_title 3줄. 대사는 풍선당 40자 이하. episode.json 의 caption, hashtags 도 채운다. `toon prompt <ep>` 가 검증 경고를 낸다. 고쳐서 경고를 없앤 뒤 **G3** 승인을 받는다.

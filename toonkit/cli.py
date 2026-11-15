@@ -9,7 +9,7 @@ import sys
 
 from PIL import Image
 
-from . import exporter, formats, lettering, prompts, qa as qa_mod, schema, stylecmd
+from . import exporter, formats, lettering, plancmd, planning, prompts, qa as qa_mod, schema, stylecmd
 from .styles import PALETTES, TEMPLATE_BIBLE
 from .project import Project
 from .util import RATIO_MAX, RATIO_MIN, ToonError, find_root, norm_ep, norm_page, now, read_json, verify_image, write_json
@@ -64,6 +64,7 @@ def cmd_init(a):
     s = dict(SERIES_TEMPLATE)
     s["style"] = json.loads(json.dumps(SERIES_TEMPLATE["style"]))
     s["title"] = a.title
+    s["plan"] = planning.empty_plan()
     if a.handle:
         s["handle"] = a.handle
     s["cover"] = dict(SERIES_TEMPLATE["cover"], label_template="%s EP.{n}" % a.title)
@@ -72,7 +73,7 @@ def cmd_init(a):
     for sub in ("characters", "episodes", "style"):
         os.makedirs(os.path.join(d, sub), exist_ok=True)
     out("시리즈 폴더를 만들었습니다: %s" % d)
-    out("다음: toon style presets 로 그림체부터 정하세요(레퍼런스가 있으면 toon style ref add). 그다음 toon character add <id> --name ... --role main")
+    out("다음: toon plan show 로 시리즈 기획(목적·독자·기둥)부터 정하고 toon plan approve 로 승인하세요. 그다음 toon style presets(그림체), toon character add <id> --name ... --role main")
 
 
 def require_style(proj, no_style):
@@ -88,6 +89,18 @@ def require_style(proj, no_style):
                     "toon style ingest, toon style approve). 건너뛰려면 --no-style.")
 
 
+def require_plan(proj, no_plan):
+    """승인된 기획이 없으면 거부한다. plan 객체가 없는 옛 시리즈(승인된 그림체나 캐릭터 시트가 있음)는 경고만."""
+    if no_plan or planning.is_approved(proj.series):
+        return
+    legacy = (planning.get(proj.series) is None
+              and (proj.approved_sample() or any(proj.approved_sheet(c) for c in proj.char_ids())))
+    if legacy:
+        out("경고: 시리즈 기획(plan)이 없습니다(옛 시리즈라 계속 진행). toon plan set/approve 로 기획을 남겨 두는 편이 좋습니다.")
+        return
+    raise ToonError("승인된 시리즈 기획이 없습니다. toon plan show/set/check/approve 로 기획부터 정하세요. 건너뛰려면 --no-plan.")
+
+
 def sheet_job(proj, path):
     refs = prompts.sheet_refs(proj)
     out("image_gen 참조 이미지(referenced_image_paths): %s" % json.dumps([os.path.abspath(r) for r in refs], ensure_ascii=False))
@@ -96,7 +109,14 @@ def sheet_job(proj, path):
 
 def cmd_style(a):
     proj = Project.open(a.root)
+    if a.sc in ("prompt", "ingest"):
+        require_plan(proj, a.no_plan)
     stylecmd.run(proj, a)
+
+
+def cmd_plan(a):
+    proj = Project.open(a.root)
+    plancmd.run(proj, a)
 
 
 def cmd_character(a):
@@ -157,10 +177,27 @@ def cmd_episode(a):
     d = proj.ep_dir(n)
     if os.path.exists(d):
         raise ToonError("이미 있는 에피소드입니다: ep%02d" % n)
-    fmt = formats.require(a.format)
+    plan = planning.get(proj.series)
+    fid = a.format
+    mix = (plan or {}).get("format_mix") or []
+    if fid is None:
+        if planning.is_approved(proj.series) and mix:
+            fid = mix[0]
+            out("기획의 format_mix 첫 번째 포맷 %s 를 씁니다(다른 포맷은 --format)." % fid)
+        else:
+            fid = "ranking"
+    fmt = formats.require(fid)
+    if plan and mix and fmt["id"] not in mix:
+        out("경고: 포맷 %s 는 기획의 format_mix(%s)에 없습니다." % (fmt["id"], ", ".join(mix)))
+    if a.pillar:
+        ids = [x.get("id") for x in (plan or {}).get("pillars") or []]
+        if ids and a.pillar not in ids:
+            raise ToonError("기획에 없는 기둥 '%s' 입니다. 사용 가능: %s" % (a.pillar, ", ".join(ids)))
     os.makedirs(d)
     epj = {"number": n, "format": fmt["id"], "topic_candidates": [], "chosen": "", "reason": "",
            "caption": "", "hashtags": [], "status": "draft"}
+    if a.pillar:
+        epj["pillar"] = a.pillar
     if fmt["sponsored"]:
         epj["sponsored"] = {"label": "광고", "cover_chip": True, "all_pages": False}
     write_json(os.path.join(d, "episode.json"), epj)
@@ -370,10 +407,21 @@ def cmd_status(a):
     rows = proj.ledger()
     base = os.path.join(proj.root, "episodes")
     eps = [norm_ep(a.ep)] if a.ep else sorted(int(d[2:]) for d in os.listdir(base) if d.startswith("ep") and d[2:].isdigit()) if os.path.isdir(base) else []
+    out(planning.status_line(proj.series))
     out("시리즈: %s" % proj.series.get("title"))
     out(stylecmd.status_line(proj))
     for c in proj.char_ids():
         out("캐릭터 %s: 승인 시트 %s" % (c, proj.load_char(c).get("approved_sheet") or "없음"))
+    allep = sorted(int(d[2:]) for d in os.listdir(base) if d.startswith("ep") and d[2:].isdigit()) if os.path.isdir(base) else []
+    epjs = []
+    for e in allep:
+        try:
+            epjs.append(proj.load_episode(e))
+        except (OSError, ToonError):
+            pass
+    dist = planning.pillar_distribution(proj.series, epjs)
+    if dist:
+        out(dist)
     for ep in eps:
         try:
             sb = proj.load_storyboard(ep)
@@ -414,12 +462,22 @@ def build_parser():
     x = ss.add_parser("ref", parents=[common]); rs = x.add_subparsers(dest="rc"); rs.required = True
     y = rs.add_parser("add", parents=[common]); y.add_argument("images", nargs="+")
     rs.add_parser("list", parents=[common])
-    x = ss.add_parser("prompt", parents=[common]); x.add_argument("--presets"); x.add_argument("--scene")
-    x = ss.add_parser("ingest", parents=[common]); x.add_argument("png"); x.add_argument("--preset")
+    x = ss.add_parser("prompt", parents=[common]); x.add_argument("--presets"); x.add_argument("--scene"); x.add_argument("--no-plan", action="store_true")
+    x = ss.add_parser("ingest", parents=[common]); x.add_argument("png"); x.add_argument("--preset"); x.add_argument("--no-plan", action="store_true")
     x = ss.add_parser("approve", parents=[common]); x.add_argument("--version", type=int)
     s.set_defaults(fn=cmd_style)
+    s = sp.add_parser("plan", parents=[common]); ps = s.add_subparsers(dest="pl"); ps.required = True
+    ps.add_parser("show", parents=[common]); ps.add_parser("check", parents=[common]); ps.add_parser("recommend", parents=[common]); ps.add_parser("approve", parents=[common])
+    x = ps.add_parser("set", parents=[common])
+    for f in ("purpose", "premise", "tone", "cadence", "purpose-note", "kpi", "monetization", "format-mix", "who", "pain", "want", "file"):
+        x.add_argument("--" + f)
+    x.add_argument("--boundary", action="append"); x.add_argument("--reference", action="append")
+    x = ps.add_parser("pillar", parents=[common]); pcs = x.add_subparsers(dest="pc"); pcs.required = True
+    y = pcs.add_parser("add", parents=[common]); y.add_argument("name"); y.add_argument("--desc"); y.add_argument("--share", type=int, default=0)
+    y = pcs.add_parser("rm", parents=[common]); y.add_argument("id")
+    s.set_defaults(fn=cmd_plan)
     s = sp.add_parser("episode", parents=[common]); es = s.add_subparsers(dest="ec"); es.required = True
-    x = es.add_parser("new", parents=[common]); x.add_argument("--n", type=int); x.add_argument("--format", default="ranking")
+    x = es.add_parser("new", parents=[common]); x.add_argument("--n", type=int); x.add_argument("--format", default=None, help="기본: 승인된 기획의 format_mix 첫째, 없으면 ranking"); x.add_argument("--pillar", help="콘텐츠 기둥 id(기획의 pillars)")
     s.set_defaults(fn=cmd_episode)
     s = sp.add_parser("formats", parents=[common]); s.add_argument("id", nargs="?"); s.set_defaults(fn=cmd_formats)
     s = sp.add_parser("prompt", parents=[common]); s.add_argument("ep"); s.add_argument("--pages"); s.add_argument("--no-sheets", action="store_true"); s.set_defaults(fn=cmd_prompt)
