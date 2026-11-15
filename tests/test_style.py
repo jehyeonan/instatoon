@@ -205,7 +205,7 @@ class IngestApproveTests(StyleBase):
 
     def test_status_line(self):
         code, o, e = self.t("status")
-        self.assertIn("그림체: 구버전 style_bible", o)
+        self.assertIn("그림체: 미설정", o)
         self.approved_style("doodle")
         self.t("style", "ref", "add", self.good)
         code, o, e = self.t("status")
