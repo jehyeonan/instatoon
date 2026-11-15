@@ -4,7 +4,7 @@ import shutil
 
 from PIL import Image
 
-from . import schema
+from . import schema, sponsor
 from .util import RATIO_MAX, RATIO_MIN, ToonError, crop_box
 
 # out/ 안에서 export 가 만들고 교체하는 파일은 NN.jpg, preview.jpg, caption.txt 뿐이다.
@@ -29,6 +29,7 @@ def _fit_to_canvas(src, cw, ch):
 
 def _validate(proj, ep, pages, force):
     problems = list(schema.check_series(proj.series))
+    problems += sponsor.check(proj.load_episode(ep))
     for p in pages:
         n = p["n"]
         pj = proj.page_json(ep, n)
@@ -77,7 +78,7 @@ def export(proj, ep, force=False):
             y = gap + (i // cols) * (th + gap)
             sheet.paste(im.resize((tw, th), Image.LANCZOS), (x, y))
         sheet.save(os.path.join(tmp, "preview.jpg"), quality=88)
-        cap = (epj.get("caption") or "").strip()
+        cap = sponsor.caption_text(epj)
         tags = epj.get("hashtags") or []
         if isinstance(tags, str):
             tags = tags.split()

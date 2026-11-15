@@ -23,9 +23,9 @@ description: 연재 인스타툰(4:5 세로 컷툰)을 Codex 안에서 만든다
 - **G0 그림체 승인**: 같은 장면의 그림체 샘플을 보여 주고 고르게 한 뒤 승인받는다.
 - **G1 캐릭터 시트 승인**: 시트 이미지를 보여 주고 승인받는다.
 - **G2 주제 선택**: 후보 3~5개를 이유와 함께 보여 주고 고르게 한다.
-- **G3 콘티 승인**: 장별 장면·대사·허용 그림 글자 목록을 보여 주고 승인받는다.
+- **G3 콘티 승인**: 장별 장면·대사·허용 그림 글자 목록을 보여 주고 승인받는다. 협찬(sponsored, groupbuy)이면 episode.json 의 sponsored 설정(label, cover_chip, all_pages)과 금지 문구(AD, PR, Sponsored, 체험단, ×만 쓴 표기)가 없는지도 확인한다.
 - **G4 장별 승인**: 장마다 lettered.png 를 보여 주고 승인받는다.
-- **G5 내보내기 확인**: preview.jpg 와 caption.txt 를 보여 주고 확인받는다.
+- **G5 내보내기 확인**: preview.jpg 와 caption.txt 를 보여 주고 확인받는다. 협찬이면 caption.txt 첫 줄의 #광고류 표기와 표지(또는 전 장) 광고 칩이 보이는지 확인한다.
 
 ## 절차
 
@@ -46,10 +46,10 @@ description: 연재 인스타툰(4:5 세로 컷툰)을 Codex 안에서 만든다
 4. 결과 PNG 를 `toon character ingest <id> <png>` 로 등록하고 view_image 로 확인한다. check_attributes 가 시트에 다 있는지 본다. **G1** 승인 후 `toon character approve <id>` .
 
 ### 2. 에피소드와 주제 (G2)
-`toon episode new` 로 틀을 만든다. episode.json 의 topic_candidates 에 후보와 이유·점수를 적어 사용자에게 보이고 **G2** 선택을 받아 chosen, reason 을 채운다.
+먼저 `toon formats` 로 포맷 16종을 보고(`toon formats <id>` 는 장별 역할), 주제 후보마다 어울리는 포맷을 붙여 제안한다(예: "월급날 장바구니 TOP 3 — ranking", "회식 vs 퇴근 — comparison"). 협찬이면 sponsored 나 groupbuy. 선택이 끝나면 `toon episode new --format <id>` 로 틀을 만든다. episode.json 의 topic_candidates 에 후보와 이유·점수를 적어 사용자에게 보이고 **G2** 선택을 받아 chosen, reason 을 채운다.
 
 ### 3. 콘티 (G3)
-storyboard.json 을 쓴다(형식은 formats.md). 장마다 scene, cast, lines(id, kind, speaker, text), in_image_text(그림 안에 허용할 짧은 글자만), 표지는 cover_title 3줄. 대사는 풍선당 40자 이하. episode.json 의 caption, hashtags 도 채운다. `toon prompt <ep>` 가 검증 경고를 낸다. 고쳐서 경고를 없앤 뒤 **G3** 승인을 받는다.
+`toon episode new --format <id>` 가 만든 storyboard.json 틀(장별 역할이 scene 자리표시)을 채운다. 포맷을 바꾸려면 `toon formats <id>` 의 장별 역할과 references/formats.md 를 보고 다시 짠다. 장 수가 포맷 권장 범위를 벗어나면 경고, 20장을 넘으면 오류다. 표지에는 cover_subtitle(화 번호·부제 칩, 선택), cover_note(작은 고지, 선택)를 쓸 수 있다. 연재물(serial, episodic)의 마지막 장은 자동으로 "- 계속 -"이고(episode.json 의 continue_text 로 변경), 완결 화는 episode.json 에 "final": true 를 둔다. 협찬은 episode.json 에 "sponsored": {"label": "광고", "cover_chip": true, "all_pages": false} 를 둔다(label 은 광고, 유료광고, 상품 협찬, 광고비 지급 중 대가에 맞게). 형식은 formats.md. 장마다 scene, cast, lines(id, kind, speaker, text), in_image_text(그림 안에 허용할 짧은 글자만), 표지는 cover_title 3줄. 대사는 풍선당 40자 이하. episode.json 의 caption, hashtags 도 채운다. `toon prompt <ep>` 가 검증 경고를 낸다. 고쳐서 경고를 없앤 뒤 **G3** 승인을 받는다.
 
 ### 4. 이미지 생성 (G4의 앞부분)
 1. `toon prompt <ep> [--pages 2,5]` 가 장별 prompt_vN.txt 를 만들고 jobs.json(page, prompt_file, referenced_image_paths)을 출력한다.

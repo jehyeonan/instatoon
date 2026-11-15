@@ -58,7 +58,8 @@ Codex 에서 "인스타툰 만들자"처럼 말하면 SKILL.md 의 절차를 따
 | character prompt <id> [--no-style] | lock_prompt 반영해 시트 프롬프트 새 버전 |
 | character ingest <id> <png> | 시트 버전 등록 |
 | character approve <id> [--version V] | 승인 시트 지정 |
-| episode new [--n N] [--format F] | 에피소드 폴더, episode.json, storyboard.json 틀 |
+| formats [ID] | 포맷 16종 목록 / 한 포맷의 장별 역할 |
+| episode new [--n N] [--format F] | 에피소드 폴더, episode.json, 포맷의 장별 역할을 담은 storyboard.json 틀(없는 포맷은 거부) |
 | prompt <ep> [--pages 2,5] [--no-sheets] | 콘티 검증 후 장별 prompt_vN.txt, jobs.json 출력 |
 | ingest <ep> <page> <png> [--edit-of N] | 새 버전 등록(가로 등 비율 불량은 rejected 기록) |
 | grid <ep> <page> | 10% 격자 + 좌표 라벨 grid.png |

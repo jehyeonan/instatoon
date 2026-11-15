@@ -3,7 +3,7 @@ import os
 
 from PIL import Image, ImageDraw
 
-from . import balloons, textfit
+from . import balloons, formats, sponsor, textfit
 from . import schema
 from .util import ToonError, parse_color, read_json, write_json
 
@@ -65,7 +65,7 @@ def _cover_size(proj, lines, area_px):
     return fp, size
 
 
-def draw_cover(proj, img, page, n, ep):
+def draw_cover(proj, img, page, n, ep, ad_label=None):
     W, H = img.size
     cv = proj.series.get("cover") or {}
     lines = page.get("cover_title") or cv.get("title_lines")
@@ -73,6 +73,19 @@ def draw_cover(proj, img, page, n, ep):
         raise ToonError("%d장 표지: cover_title 3줄이 필요합니다(storyboard 또는 series.cover.title_lines)." % n)
     area = cv.get("title_area") or [0.05, 0.03, 0.95, 0.38]
     area_px = [area[0] * W, area[1] * H, area[2] * W, area[3] * H]
+    scale = W / 1080.0
+    if ad_label:
+        # 좌상단 광고 칩 아래에서 제목을 시작한다(칩과 제목 겹침 방지)
+        area_px[1] = max(area_px[1], ad_chip_box(proj, W, H, ad_label)[3] + 12 * scale)
+    sub_text = page.get("cover_subtitle")
+    sub_box = None
+    if sub_text:
+        # 부제 칩을 제목 영역 맨 아래 안쪽에 두고, 제목은 그 위 공간에 맞춘다(캐릭터 머리 침범 방지)
+        probe = subtitle_chip_box(proj, W, H, sub_text, 0)
+        ch = probe[3] - probe[1]
+        sub_top = area_px[3] - ch
+        sub_box = subtitle_chip_box(proj, W, H, sub_text, sub_top - 14 * scale)
+        area_px[3] = sub_top - 14 * scale
     accent_idx = int(cv.get("accent_line", 2)) - 1
     accent = parse_color(cv.get("accent_color"), "#E02020", "cover.accent_color")
     text_c = parse_color(cv.get("text_color"), "#111111", "cover.text_color")
@@ -92,6 +105,71 @@ def draw_cover(proj, img, page, n, ep):
         else:
             d.text((cx, cy), t, font=font, fill=text_c, anchor="mm", stroke_width=max(2, sw // 2), stroke_fill=(255, 255, 255))
     draw_label(proj, img, ep)
+    if sub_box:
+        x0, y0, x1, y1, sfont = sub_box
+        d.rounded_rectangle([x0, y0, x1, y1], radius=(y1 - y0) / 4.0, fill=accent)
+        d.text(((x0 + x1) / 2.0, (y0 + y1) / 2.0), sub_text, font=sfont, fill=(255, 255, 255), anchor="mm")
+    if page.get("cover_note"):
+        draw_cover_note(proj, img, page["cover_note"])
+
+
+def subtitle_chip_box(proj, W, H, text, top):
+    """표지 부제 칩의 (x0, y0, x1, y1, font). 제목 영역 아래(top) 가운데에 놓고 캔버스 안으로 맞춘다."""
+    scale = W / 1080.0
+    size = 44 * scale
+    padx, pady = 36 * scale, 16 * scale
+    maxw = W * 0.9 - 2 * padx
+    while size > 12 and textfit.load_font(proj.font("title"), int(size)).getlength(text) > maxw:
+        size -= 1
+    font = textfit.load_font(proj.font("title"), int(size))
+    bw = font.getlength(text) + 2 * padx
+    bh = font.size * 1.25 + 2 * pady
+    x0 = (W - bw) / 2.0
+    y0 = min(top + 14 * scale, H - bh - 24 * scale)
+    return (x0, y0, x0 + bw, y0 + bh, font)
+
+
+def draw_subtitle_chip(proj, img, text, top, accent):
+    W, H = img.size
+    x0, y0, x1, y1, font = subtitle_chip_box(proj, W, H, text, top)
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([x0, y0, x1, y1], radius=(y1 - y0) / 4.0, fill=accent)
+    d.text(((x0 + x1) / 2.0, (y0 + y1) / 2.0), text, font=font, fill=(255, 255, 255), anchor="mm")
+
+
+def draw_cover_note(proj, img, text):
+    """표지 맨 아래 왼쪽의 작은 회색 고지문(오른쪽 아래 화 번호 라벨을 피해 가로 절반 안)."""
+    W, H = img.size
+    scale = W / 1080.0
+    size = 28 * scale
+    maxw = W * 0.5
+    while size > 8 and textfit.load_font(proj.font("caption"), int(size)).getlength(text) > maxw:
+        size -= 1
+    font = textfit.load_font(proj.font("caption"), int(size))
+    d = ImageDraw.Draw(img)
+    d.text((24 * scale, H - 24 * scale), text, font=font, fill=(120, 120, 120), anchor="ls",
+           stroke_width=max(1, int(scale * 2)), stroke_fill=(255, 255, 255))
+
+
+def ad_chip_box(proj, W, H, label):
+    scale = W / 1080.0
+    font = textfit.load_font(proj.font("title"), max(int(32 * scale), 8))
+    bw = font.getlength(label) + 40 * scale
+    bh = max(48 * scale, font.size * 1.5)
+    x0, y0 = 24 * scale, 24 * scale
+    return (x0, y0, x0 + bw, y0 + bh, font)
+
+
+def draw_ad_chip(proj, img, label):
+    """좌상단 광고 칩: 흰 바탕, 검정 굵은 테두리와 글씨. 1080 기준 높이 48px 이상."""
+    W, H = img.size
+    scale = W / 1080.0
+    x0, y0, x1, y1, font = ad_chip_box(proj, W, H, label)
+    bw, bh = x1 - x0, y1 - y0
+    d = ImageDraw.Draw(img)
+    d.rectangle([x0, y0, x0 + bw, y0 + bh], fill=(255, 255, 255), outline=(0, 0, 0), width=max(2, int(4 * scale)))
+    d.text((x0 + bw / 2.0, y0 + bh / 2.0), label, font=font, fill=(0, 0, 0), anchor="mm")
+    return (x0, y0, x0 + bw, y0 + bh)
 
 
 def draw_label(proj, img, ep):
@@ -108,6 +186,30 @@ def draw_label(proj, img, ep):
     x1, y1 = W - 24 * scale, H - 24 * scale
     d.rectangle([x1 - bw, y1 - bh, x1, y1], fill=(17, 17, 17))
     d.text((x1 - bw / 2.0, y1 - bh / 2.0), text, font=font, fill=(255, 255, 255), anchor="mm")
+
+
+def ending_mode(epj):
+    """엔딩 장 표기: 'series'(시리즈 엔딩) 또는 'continue'(- 계속 -)."""
+    if epj.get("final"):
+        return "series"
+    mode = epj.get("ending")
+    if mode in ("series", "continue"):
+        return mode
+    f = formats.get(epj.get("format"))
+    return "continue" if f and f["ending_type"] == "continue" else "series"
+
+
+def draw_continue(proj, img, text):
+    W, H = img.size
+    scale = W / 1080.0
+    size = 52 * scale
+    font = textfit.load_font(proj.font("title"), int(size))
+    while size > 12 and font.getlength(text) > W * 0.8:
+        size -= 1
+        font = textfit.load_font(proj.font("title"), int(size))
+    d = ImageDraw.Draw(img)
+    d.text((W / 2.0, H - 70 * scale), text, font=font, fill=(17, 17, 17), anchor="mm",
+           stroke_width=max(2, int(size * 0.08)), stroke_fill=(255, 255, 255))
 
 
 def draw_ending(proj, img):
@@ -160,10 +262,17 @@ def render_page(proj, ep, n):
     W, H = img.size
     page = sb_page(proj.load_storyboard(ep), n)
     plans, issues = plan_balloons(proj, ep, n, W, H)
+    epj = proj.load_episode(ep)
+    sp = sponsor.settings(epj)
     if page.get("kind") == "cover":
-        draw_cover(proj, img, page, n, ep)
+        draw_cover(proj, img, page, n, ep, ad_label=sp["label"] if sp and (sp["cover_chip"] or sp["all_pages"]) else None)
     elif page.get("kind") == "ending":
-        draw_ending(proj, img)
+        if ending_mode(epj) == "continue":
+            draw_continue(proj, img, epj.get("continue_text") or "- 계속 -")
+        else:
+            draw_ending(proj, img)
+    if sp and ((page.get("kind") == "cover" and sp["cover_chip"]) or sp["all_pages"]):
+        draw_ad_chip(proj, img, sp["label"])
     overflow = []
     for pl in plans:
         if pl["fit"].overflow:

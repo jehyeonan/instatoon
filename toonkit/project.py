@@ -1,7 +1,7 @@
 import json
 import os
 
-from . import schema
+from . import formats, schema
 from .util import ToonError, check_id, find_root, now, read_json, write_json, FONT_DIR
 
 DEFAULT_FONTS = {
@@ -51,7 +51,11 @@ class Project:
     def valid_storyboard(self, ep):
         """검증을 통과한 (storyboard, 경고 목록). 오류가 있으면 ToonError."""
         sb = self.load_storyboard(ep)
-        errs, warns = schema.check_storyboard(sb, set(self.char_ids()))
+        try:
+            fmt = formats.get(self.load_episode(ep).get("format"))
+        except (OSError, ValueError, ToonError):
+            fmt = None
+        errs, warns = schema.check_storyboard(sb, set(self.char_ids()), fmt)
         errs = schema.check_series(self.series) + errs
         if errs:
             raise ToonError("콘티 검증 실패:\n  " + "\n  ".join(errs))

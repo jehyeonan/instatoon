@@ -9,7 +9,7 @@ import sys
 
 from PIL import Image
 
-from . import exporter, lettering, prompts, qa as qa_mod, schema, stylecmd
+from . import exporter, formats, lettering, prompts, qa as qa_mod, schema, stylecmd
 from .styles import PALETTES, TEMPLATE_BIBLE
 from .project import Project
 from .util import RATIO_MAX, RATIO_MIN, ToonError, find_root, norm_ep, norm_page, now, read_json, verify_image, write_json
@@ -157,17 +157,30 @@ def cmd_episode(a):
     d = proj.ep_dir(n)
     if os.path.exists(d):
         raise ToonError("이미 있는 에피소드입니다: ep%02d" % n)
+    fmt = formats.require(a.format)
     os.makedirs(d)
-    write_json(os.path.join(d, "episode.json"), {
-        "number": n, "format": a.format, "topic_candidates": [], "chosen": "", "reason": "",
-        "caption": "", "hashtags": [], "status": "draft"})
-    pages = [{"n": 1, "kind": "cover", "scene": "TODO", "cast": [], "lines": [], "in_image_text": [],
-              "cover_title": ["TODO", "TODO", "TODO"]}]
-    for i in range(2, 8):
-        pages.append({"n": i, "kind": "body", "scene": "TODO", "cast": [], "lines": [], "in_image_text": []})
-    pages.append({"n": 8, "kind": "ending", "scene": "TODO", "cast": [], "lines": [], "in_image_text": []})
-    write_json(os.path.join(d, "storyboard.json"), {"pages": pages})
+    epj = {"number": n, "format": fmt["id"], "topic_candidates": [], "chosen": "", "reason": "",
+           "caption": "", "hashtags": [], "status": "draft"}
+    if fmt["sponsored"]:
+        epj["sponsored"] = {"label": "광고", "cover_chip": True, "all_pages": False}
+    write_json(os.path.join(d, "episode.json"), epj)
+    sbp = os.path.join(d, "storyboard.json")
+    if not os.path.exists(sbp):
+        write_json(sbp, formats.storyboard_template(fmt))
     out("에피소드 폴더: %s" % d)
+    out("포맷 %s(%s): 장별 역할을 scene 자리표시에 넣은 틀 %d장을 만들었습니다(권장 %d~%d장)." % (
+        fmt["id"], fmt["name"], len(formats.expand_roles(fmt)), fmt["pages"][0], fmt["pages"][1]))
+    if fmt["sponsored"]:
+        out("협찬 포맷입니다. episode.json 의 sponsored.label 을 대가에 맞게(광고, 유료광고, 상품 협찬, 광고비 지급) 확인하세요.")
+
+
+def cmd_formats(a):
+    if a.id:
+        out(formats.format_detail(formats.require(a.id)))
+    else:
+        out(formats.format_table())
+        out("")
+        out("자세한 장별 역할: toon formats <id>")
 
 
 # ---------- prompt / ingest ----------
@@ -408,6 +421,7 @@ def build_parser():
     s = sp.add_parser("episode", parents=[common]); es = s.add_subparsers(dest="ec"); es.required = True
     x = es.add_parser("new", parents=[common]); x.add_argument("--n", type=int); x.add_argument("--format", default="ranking")
     s.set_defaults(fn=cmd_episode)
+    s = sp.add_parser("formats", parents=[common]); s.add_argument("id", nargs="?"); s.set_defaults(fn=cmd_formats)
     s = sp.add_parser("prompt", parents=[common]); s.add_argument("ep"); s.add_argument("--pages"); s.add_argument("--no-sheets", action="store_true"); s.set_defaults(fn=cmd_prompt)
     s = sp.add_parser("ingest", parents=[common]); s.add_argument("ep"); s.add_argument("page"); s.add_argument("png"); s.add_argument("--edit-of", type=int); s.set_defaults(fn=cmd_ingest)
     s = sp.add_parser("grid", parents=[common]); s.add_argument("ep"); s.add_argument("page"); s.set_defaults(fn=cmd_grid)

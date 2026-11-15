@@ -1,5 +1,7 @@
 import re
 
+from . import formats
+
 PAGE_KINDS = ("cover", "body", "ending")
 LINE_KINDS = ("speech", "thought", "narration", "shout", "sfx")
 MAX_LINE_CHARS = 40
@@ -33,13 +35,19 @@ def check_series(s):
     return errors
 
 
-def check_storyboard(sb, char_ids):
-    """(errors, warnings)"""
+def check_storyboard(sb, char_ids, fmt=None):
+    """(errors, warnings). fmt 는 formats 레지스트리 항목(없으면 기본 6~10장 권장)."""
     errors, warns = [], []
     pages = sb.get("pages") if isinstance(sb, dict) else None
     if not isinstance(pages, list) or not pages:
         return ["storyboard.json: pages 가 비어 있습니다."], warns
-    if len(pages) < 5 or len(pages) > 10:
+    if len(pages) > 20:
+        errors.append("장 수가 %d장입니다. 인스타그램 캐러셀 상한은 20장입니다." % len(pages))
+    elif fmt is not None:
+        w = formats.check_pages(fmt, len(pages))
+        if w:
+            warns.append(w)
+    elif len(pages) < 5 or len(pages) > 10:
         warns.append("장 수가 %d장입니다(권장 6~10장)." % len(pages))
     seen = set()
     for i, p in enumerate(pages):
@@ -86,6 +94,9 @@ def check_storyboard(sb, char_ids):
         if iit is not None and not (isinstance(iit, list) and all(isinstance(x, str) for x in iit)):
             errors.append("%s: in_image_text 는 문자열 목록이어야 합니다." % tag)
         ct = p.get("cover_title")
+        for fld in ("cover_subtitle", "cover_note"):
+            if p.get(fld) is not None and not (isinstance(p[fld], str) and p[fld].strip()):
+                errors.append("%s: %s 는 비어 있지 않은 문자열이어야 합니다." % (tag, fld))
         if p.get("kind") == "cover":
             if ct is None:
                 warns.append("%s: cover_title 이 없어 series.cover.title_lines 를 씁니다." % tag)

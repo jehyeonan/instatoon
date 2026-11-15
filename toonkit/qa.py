@@ -3,7 +3,7 @@ import os
 
 from PIL import Image
 
-from . import balloons, lettering, schema
+from . import balloons, lettering, schema, sponsor
 from .util import RATIO_MAX, RATIO_MIN, crop_box, norm_text, read_json, write_json
 
 VISUAL_ITEMS = [
@@ -101,14 +101,15 @@ def check_page(proj, ep, page):
 def run(proj, ep):
     sb, _ = proj.valid_storyboard(ep)
     res = [check_page(proj, ep, p) for p in sorted(sb["pages"], key=lambda p: p["n"])]
-    out = {"episode": ep, "pages": res,
-           "errors": sum(len(r["errors"]) for r in res), "warnings": sum(len(r["warnings"]) for r in res)}
+    ep_errors = sponsor.check(proj.load_episode(ep))
+    out = {"episode": ep, "pages": res, "episode_errors": ep_errors,
+           "errors": sum(len(r["errors"]) for r in res) + len(ep_errors), "warnings": sum(len(r["warnings"]) for r in res)}
     write_json(os.path.join(proj.ep_dir(ep), "qa.json"), out)
     return out
 
 
 def summary(out):
-    lines = []
+    lines = ["[에피소드] 오류: " + e for e in out.get("episode_errors") or []]
     for r in out["pages"]:
         mark = "FAIL" if r["errors"] else ("warn" if r["warnings"] else "ok")
         lines.append("[%s] %d장%s" % (mark, r["page"], " (승인)" if r["approved"] else ""))
